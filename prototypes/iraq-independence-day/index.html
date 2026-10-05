@@ -1,0 +1,1237 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Iraq Independence Reel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Noto+Kufi+Arabic:wght@100..900&family=Reem+Kufi:wght@400..700&family=Aref+Ruqaa:wght@400;700&family=Amiri:wght@400;700&family=Special+Elite&family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400..700&display=swap">
+<style>
+/* Layout: a 1920×1080 film stage, letterboxed and scaled to the viewport, with a transport bar under it. Single dark look by design. */
+:root {
+  color-scheme: dark;
+  --room: #08080a;
+  --chrome: rgba(255, 255, 255, 0.56);
+  --chrome-hi: rgba(255, 255, 255, 0.92);
+  --track: rgba(255, 255, 255, 0.12);
+  --red: #ce1126;
+  --white: #f7f5f0;
+  --black: #0b0b0c;
+  --green: #007a3d;
+  --gold: #e3b862;
+  --gold-hi: #f7dfa0;
+  --lapis: #0b1838;
+  --paper: #e6d8b8;
+  --ink: #2a2018;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --font-grot: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --font-kufi: "Noto Kufi Arabic", "Reem Kufi", "Geeza Pro", Tahoma, sans-serif;
+  --font-ruqaa: "Aref Ruqaa", "Amiri", "Geeza Pro", serif;
+  --font-naskh: "Amiri", "Geeza Pro", "Times New Roman", serif;
+  --font-type: "Special Elite", "Courier New", Courier, monospace;
+  --font-bodoni: "Bodoni Moda", Didot, "Times New Roman", serif;
+  --font-serif: "Instrument Serif", Georgia, serif;
+}
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: var(--room);
+  color: var(--chrome-hi);
+  font-family: var(--font-mono);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+.viewer {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 16px 16px 84px;
+}
+.frame {
+  position: relative;
+  flex: none;
+  overflow: hidden;
+  background: #000;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 30px 80px rgba(0, 0, 0, 0.6);
+  cursor: pointer;
+}
+.stage {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1920px;
+  height: 1080px;
+  overflow: hidden;
+  transform-origin: 0 0;
+  background: #000;
+  contain: strict;
+}
+.stage * { box-sizing: border-box; }
+.transport {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 14px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--chrome);
+  min-width: 0;
+}
+.transport .meta { display: flex; gap: 10px; align-items: baseline; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.transport .meta b { color: var(--chrome-hi); font-weight: 600; }
+.transport .tc { font-variant-numeric: tabular-nums; color: var(--chrome-hi); }
+.play {
+  width: 28px; height: 28px; border-radius: 999px; border: 0;
+  background: var(--track); color: var(--chrome-hi);
+  display: grid; place-items: center; cursor: pointer; font: inherit; font-size: 11px;
+  transition: background-color 150ms ease-out, transform 150ms ease-out;
+}
+.play:hover { background: rgba(255, 255, 255, 0.2); }
+.play:active { transform: scale(0.97); }
+.play:focus-visible, .scrub:focus-visible { outline: 2px solid rgba(255, 255, 255, 0.4); outline-offset: 2px; }
+.scrub { position: relative; height: 16px; cursor: pointer; touch-action: none; }
+.scrub::before { content: ""; position: absolute; left: 0; right: 0; top: 7px; height: 2px; background: var(--track); border-radius: 2px; }
+.scrub .fill { position: absolute; left: 0; top: 7px; height: 2px; width: 100%; background: var(--chrome-hi); border-radius: 2px; transform-origin: 0 50%; transform: scaleX(0); }
+.scrub .ticks { position: absolute; inset: 0; pointer-events: none; }
+.scrub .ticks i { position: absolute; top: 4px; width: 1px; height: 8px; background: rgba(255, 255, 255, 0.18); }
+body.record .transport, body.record .proto-picker { display: none !important; }
+body.record .viewer { padding: 0; justify-content: flex-start; align-items: flex-start; }
+body.record .frame { box-shadow: none; }
+
+/* ─── Picker (verbatim from PICKER.md) ─── */
+.proto-picker {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2147483647;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(10, 10, 10, 0.82);
+  -webkit-backdrop-filter: blur(12px) saturate(1.4);
+  backdrop-filter: blur(12px) saturate(1.4);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.08) inset,
+    0 8px 24px rgba(0, 0, 0, 0.24),
+    0 2px 6px rgba(0, 0, 0, 0.12);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 13px;
+  line-height: 1;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.proto-picker-highlight {
+  position: absolute;
+  top: 4px;
+  left: 0;
+  height: 28px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  will-change: transform;
+}
+.proto-picker[data-ready] .proto-picker-highlight {
+  transition:
+    transform 250ms cubic-bezier(0.23, 1, 0.32, 1),
+    width 250ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .proto-picker[data-ready] .proto-picker-highlight { transition: none; }
+}
+.proto-picker-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.55);
+  font: inherit;
+  cursor: pointer;
+  transition: color 150ms ease-out;
+}
+.proto-picker-item:hover { color: rgba(255, 255, 255, 0.85); }
+.proto-picker-item:active { transform: scale(0.97); }
+.proto-picker-item:focus-visible { outline: 2px solid rgba(255, 255, 255, 0.4); outline-offset: 2px; }
+.proto-picker-item[data-active] { color: #fff; }
+.proto-picker-divider { width: 1px; height: 16px; margin: 0 4px; background: rgba(255, 255, 255, 0.12); }
+.proto-picker-replay { padding: 0 10px; font-size: 14px; }
+.proto-picker[data-position="top"] { bottom: auto; top: 24px; }
+
+/* ─── Shared film primitives ─── */
+.abs { position: absolute; }
+.full { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+.mask { overflow: hidden; }
+.ar { direction: rtl; unicode-bidi: isolate; }
+.mono { font-family: var(--font-mono); }
+.will { will-change: transform, opacity; }
+
+/* ─── 1 · Kinetic ─── */
+.kin { background: var(--black); font-family: var(--font-grot); }
+.kin .k-paper { background: var(--white); color: var(--black); }
+.kin .k-band { position: absolute; left: 0; width: 1920px; height: 360px; overflow: hidden; transform-origin: 50% 50%; }
+.kin .k-marq { position: absolute; top: 0; left: 0; white-space: nowrap; line-height: 360px; height: 360px; }
+.kin .k-marq.lat { font-weight: 900; font-stretch: 125%; font-size: 300px; letter-spacing: -0.02em; }
+.kin .k-marq.arb { font-family: var(--font-kufi); font-weight: 900; font-size: 210px; line-height: 340px; }
+.kin .k-marq.out { color: transparent; -webkit-text-stroke: 4px var(--white); }
+.kin .k-line { left: 0; top: 534px; width: 1920px; height: 12px; background: var(--red); transform-origin: 0 50%; }
+.kin .k-reel { position: absolute; top: 0; width: 300px; height: 440px; overflow: hidden; }
+.kin .k-strip { position: absolute; left: 0; top: 0; width: 300px; }
+.kin .k-strip span { display: block; height: 440px; line-height: 440px; text-align: center; font-weight: 900; font-stretch: 62%; font-size: 540px; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.kin .k-reels { position: absolute; left: 360px; top: 300px; width: 1200px; height: 440px; overflow: hidden; }
+.kin .k-eyebrow { position: absolute; top: 236px; display: flex; flex-direction: column; gap: 6px; font-family: var(--font-mono); font-size: 20px; letter-spacing: 0.18em; }
+.kin .k-eyebrow.l { left: 368px; }
+.kin .k-eyebrow.r { right: 368px; text-align: right; }
+.kin .k-rule { left: 360px; top: 772px; width: 1200px; height: 10px; background: var(--red); transform-origin: 0 50%; }
+.kin .k-capL { font-weight: 800; font-stretch: 100%; font-size: 64px; color: var(--red); letter-spacing: -0.01em; }
+.kin .k-capR { font-family: var(--font-kufi); font-weight: 700; font-size: 46px; line-height: 1.5; }
+.kin .k-red { background: var(--red); color: var(--white); transform-origin: 960px 777px; }
+.kin .k-lines { position: absolute; left: 120px; top: 140px; }
+.kin .k-l { font-weight: 800; font-stretch: 100%; font-size: 160px; line-height: 0.9; letter-spacing: -0.03em; padding-top: 0.06em; transform-origin: 0 100%; white-space: nowrap; }
+.kin .k-l.o { color: transparent; -webkit-text-stroke: 3px var(--white); }
+.kin .k-l.big { font-weight: 900; font-size: 220px; font-stretch: 62%; }
+.kin .k-redcap { position: absolute; right: 120px; bottom: 96px; display: flex; flex-direction: column; align-items: flex-end; gap: 10px; text-align: right; }
+.kin .k-redcap .ar { font-family: var(--font-kufi); font-weight: 700; font-size: 44px; line-height: 1.5; }
+.kin .k-redcap .mono { font-size: 20px; letter-spacing: 0.18em; opacity: 0.8; }
+.kin .k-black { background: var(--black); }
+.kin .k-hair { position: absolute; left: 0; width: 1920px; height: 2px; background: rgba(247, 245, 240, 0.14); transform-origin: 0 50%; }
+.kin .k-slice { position: absolute; top: 0; width: 120px; height: 1080px; overflow: hidden; }
+.kin .k-word { position: absolute; top: 0; width: 1920px; height: 1080px; display: flex; align-items: center; justify-content: center; }
+.kin .k-word span { font-family: var(--font-kufi); font-weight: 900; line-height: 1.3; color: var(--white); white-space: nowrap; }
+.kin .k-word.tri span { color: transparent; background: linear-gradient(180deg, var(--red) 0 40%, var(--white) 40% 64%, var(--green) 64% 100%); -webkit-background-clip: text; background-clip: text; }
+.kin .k-sub { left: 0; width: 1920px; top: 900px; text-align: center; font-family: var(--font-mono); font-size: 24px; color: rgba(247, 245, 240, 0.7); white-space: nowrap; }
+.kin .k-lock { position: absolute; left: 1030px; top: 284px; display: flex; flex-direction: column; gap: 0; color: var(--white); }
+.kin .k-lock .a { font-weight: 900; font-stretch: 112%; font-size: 184px; line-height: 0.92; letter-spacing: -0.03em; padding-top: 0.04em; }
+.kin .k-lock .b { font-weight: 800; font-stretch: 72%; font-size: 100px; line-height: 0.95; letter-spacing: -0.01em; }
+.kin .k-lock .c { font-family: var(--font-kufi); font-weight: 800; font-size: 66px; line-height: 1.7; color: rgba(247, 245, 240, 0.86); }
+.kin .k-lock .d { font-family: var(--font-mono); font-size: 26px; letter-spacing: 0.08em; padding-top: 8px; color: rgba(247, 245, 240, 0.8); }
+.kin .k-lock .d em { font-style: normal; color: var(--red); font-weight: 700; }
+.kin .k-ul { position: absolute; left: 1030px; top: 862px; width: 760px; height: 8px; background: var(--red); transform-origin: 0 50%; }
+.kin .k-mark { position: absolute; font-family: var(--font-mono); font-size: 16px; letter-spacing: 0.2em; color: rgba(247, 245, 240, 0.5); }
+.kin .k-corner { position: absolute; width: 26px; height: 26px; border-color: rgba(247, 245, 240, 0.5); border-style: solid; border-width: 0; }
+
+/* ─── 2 · Mesopotamia ─── */
+.meso { background: radial-gradient(120% 90% at 50% 45%, #15295a 0%, #0b1838 46%, #050a18 100%); }
+.meso svg { position: absolute; left: 0; top: 0; overflow: visible; }
+.meso .m-gold { fill: var(--gold); }
+.meso .m-river { fill: none; stroke: var(--gold); stroke-linecap: round; stroke-width: calc(2.6px / var(--z, 1)); }
+.meso .m-river.glow { stroke: #f2c56a; stroke-width: calc(9px / var(--z, 1)); opacity: 0.45; }
+.meso .m-line { fill: none; stroke: var(--gold); stroke-width: calc(1.6px / var(--z, 1)); }
+.meso .m-line.fine { stroke-width: calc(1px / var(--z, 1)); }
+.meso .m-line.thick { stroke-width: calc(3px / var(--z, 1)); }
+.meso .m-lbl-ar { font-family: var(--font-naskh); fill: var(--gold-hi); }
+.meso .m-lbl-en { font-family: var(--font-mono); fill: var(--gold); letter-spacing: 0.22em; }
+.meso .m-dust { mix-blend-mode: screen; }
+.meso .m-vig { background: radial-gradient(90% 80% at 50% 50%, transparent 55%, rgba(2, 4, 12, 0.75) 100%); pointer-events: none; }
+.meso .m-cap { position: absolute; left: 120px; bottom: 110px; display: flex; flex-direction: column; gap: 8px; color: var(--gold-hi); }
+.meso .m-cap .ar { font-family: var(--font-naskh); font-weight: 700; font-size: 54px; line-height: 1.3; text-align: left; }
+.meso .m-cap .mono { font-size: 18px; letter-spacing: 0.24em; color: var(--gold); }
+.meso .m-title { position: absolute; left: 0; width: 1920px; top: 470px; text-align: center; }
+.meso .m-title span { display: inline-block; font-family: var(--font-ruqaa); font-weight: 700; font-size: 150px; line-height: 1.6; padding: 0 40px; color: transparent; background: linear-gradient(180deg, #fbe8b4 0%, #e3b862 52%, #b5853a 100%); -webkit-background-clip: text; background-clip: text; -webkit-mask-image: linear-gradient(to left, #000 45%, transparent 55%); mask-image: linear-gradient(to left, #000 45%, transparent 55%); -webkit-mask-size: 300% 100%; mask-size: 300% 100%; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; }
+.meso .m-en { position: absolute; left: 0; width: 1920px; top: 768px; text-align: center; font-family: var(--font-serif); font-size: 54px; color: var(--gold-hi); white-space: nowrap; }
+.meso .m-rule { position: absolute; left: 840px; top: 862px; width: 240px; height: 8px; display: flex; box-shadow: 0 0 0 1px rgba(227, 184, 98, 0.8); transform-origin: 50% 50%; }
+.meso .m-rule i { flex: 1; }
+.meso .m-date { position: absolute; left: 0; width: 1920px; top: 900px; text-align: center; font-family: var(--font-mono); font-size: 24px; letter-spacing: 0.34em; color: var(--gold); white-space: nowrap; }
+
+/* ─── 3 · Archive ─── */
+.arc { background: #120e0a; }
+.arc .a-arch { transform-origin: 960px 540px; }
+.arc .a-tele {
+  position: absolute; left: 370px; top: 170px; width: 1180px; height: 740px;
+  background:
+    radial-gradient(ellipse 40% 30% at 18% 28%, rgba(130, 86, 30, 0.18), transparent 70%),
+    radial-gradient(ellipse 35% 40% at 84% 78%, rgba(130, 86, 30, 0.22), transparent 70%),
+    radial-gradient(circle at 62% 18%, rgba(255, 252, 235, 0.4), transparent 45%),
+    linear-gradient(180deg, #ebdec0, #e0cfa9);
+  box-shadow: inset 0 0 90px rgba(92, 60, 20, 0.38), 0 40px 90px rgba(0, 0, 0, 0.6);
+  transform: rotate(-1.4deg);
+  color: var(--ink);
+  font-family: var(--font-type);
+  padding: 46px 64px;
+}
+.arc .a-tele .fiber { position: absolute; inset: 0; mix-blend-mode: multiply; opacity: 0.35; pointer-events: none; }
+.arc .a-head { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px double rgba(42, 32, 24, 0.7); padding-bottom: 14px; }
+.arc .a-head h3 { margin: 0; font-weight: 400; font-size: 46px; letter-spacing: 0.32em; }
+.arc .a-head .r { text-align: right; font-size: 17px; letter-spacing: 0.16em; line-height: 1.5; opacity: 0.85; }
+.arc .a-fields { display: grid; grid-template-columns: 110px 1fr; row-gap: 4px; padding: 22px 0 18px; border-bottom: 1px solid rgba(42, 32, 24, 0.35); font-size: 30px; }
+.arc .a-fields .k { font-size: 16px; letter-spacing: 0.24em; opacity: 0.7; padding-top: 10px; }
+.arc .a-body { padding-top: 24px; font-size: 34px; line-height: 1.55; }
+.arc .a-body div, .arc .a-fields .v { white-space: pre; min-height: 1.2em; }
+.arc .a-tele .c { display: inline-block; opacity: 0; text-shadow: 0 0 0.6px rgba(42, 32, 24, 0.8); }
+.arc .a-note { position: absolute; left: 70px; bottom: 50px; font-family: var(--font-ruqaa); font-size: 58px; color: #22335e; transform: rotate(-4deg); line-height: 1.4; -webkit-mask-image: linear-gradient(to left, #000 45%, transparent 55%); mask-image: linear-gradient(to left, #000 45%, transparent 55%); -webkit-mask-size: 300% 100%; mask-size: 300% 100%; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; }
+.arc .a-stamp { position: absolute; left: 640px; top: 440px; width: 440px; height: 190px; color: #a51c24; border: 7px solid currentColor; outline: 3px solid currentColor; outline-offset: 7px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; mix-blend-mode: multiply; filter: url(#a-ink); opacity: 0; }
+.arc .a-stamp .en { font-family: var(--font-grot); font-weight: 900; font-stretch: 78%; font-size: 72px; letter-spacing: 0.04em; line-height: 0.95; }
+.arc .a-stamp .ar { font-family: var(--font-kufi); font-weight: 900; font-size: 44px; line-height: 1.25; }
+.arc .a-stamp .d { font-family: var(--font-mono); font-size: 15px; letter-spacing: 0.3em; font-weight: 700; }
+.arc .a-leader { background: #cdbf9f; overflow: hidden; }
+.arc .a-sweep { left: 0; top: 0; width: 1920px; height: 1080px; }
+.arc .a-ring { position: absolute; border-radius: 50%; border: 6px solid #1b1610; }
+.arc .a-cross { position: absolute; background: #1b1610; }
+.arc .a-num { left: 0; top: 0; width: 1920px; height: 1080px; display: flex; align-items: center; justify-content: center; font-family: var(--font-grot); font-weight: 800; font-stretch: 88%; font-size: 520px; color: #1b1610; line-height: 1; }
+.arc .a-bar { left: 0; width: 1920px; height: 100px; background: #000; }
+.arc .a-grain { mix-blend-mode: overlay; }
+.arc .a-flick { background: #000; pointer-events: none; }
+.arc .a-flash { background: #fff8e6; pointer-events: none; opacity: 0; }
+.arc .a-vig { background: radial-gradient(85% 75% at 50% 50%, transparent 50%, rgba(0, 0, 0, 0.72) 100%); pointer-events: none; }
+.arc .a-type { position: absolute; left: 140px; top: 190px; display: flex; flex-direction: column; color: #fbf3e2; }
+.arc .a-years { position: relative; height: 230px; width: 760px; }
+.arc .a-years div { position: absolute; left: 0; top: 0; font-family: var(--font-bodoni); font-style: italic; font-weight: 500; font-size: 230px; line-height: 1; letter-spacing: -0.02em; }
+.arc .a-rule { width: 640px; height: 1px; background: rgba(233, 221, 193, 0.45); transform-origin: 0 50%; margin: 30px 0 6px; }
+.arc .a-ar { font-family: var(--font-naskh); font-weight: 700; font-size: 118px; line-height: 1.5; text-align: left; -webkit-mask-image: linear-gradient(to left, #000 45%, transparent 55%); mask-image: linear-gradient(to left, #000 45%, transparent 55%); -webkit-mask-size: 300% 100%; mask-size: 300% 100%; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; align-self: flex-start; }
+.arc .a-en { font-family: var(--font-grot); font-weight: 600; font-size: 28px; letter-spacing: 0.42em; color: #e9ddc1; padding-top: 6px; }
+.arc .a-tw { font-family: var(--font-type); font-size: 26px; letter-spacing: 0.06em; color: rgba(233, 221, 193, 0.7); padding-top: 18px; }
+.arc .a-tw em { font-style: normal; color: #ff5a5f; }
+</style>
+</head>
+<body>
+<main class="viewer" id="viewer">
+  <div class="frame" id="frame" aria-label="Film preview. Click or press Space to pause.">
+    <div class="stage" id="stage"></div>
+  </div>
+  <div class="transport" id="transport">
+    <button class="play" id="play" type="button" aria-label="Pause (Space)">❚❚</button>
+    <div style="display:flex;flex-direction:column;gap:6px;min-width:0">
+      <div class="meta"><b id="vname">Kinetic</b><span id="vaxis">Swiss kinetic type, cut on a 120 BPM grid</span></div>
+      <div class="scrub" id="scrub" role="slider" tabindex="0" aria-label="Timeline" aria-valuemin="0" aria-valuemax="15" aria-valuenow="0"><div class="fill" id="fill"></div><div class="ticks" id="ticks"></div></div>
+    </div>
+    <span class="tc" id="tc">00:00:00 / 00:15:00</span>
+  </div>
+</main>
+
+<nav class="proto-picker" aria-label="Prototype variants">
+  <span class="proto-picker-highlight" aria-hidden="true"></span>
+  <button class="proto-picker-item" data-active aria-current="true">Kinetic</button>
+  <button class="proto-picker-item">Mesopotamia</button>
+  <button class="proto-picker-item">Archive</button>
+  <span class="proto-picker-divider" aria-hidden="true"></span>
+  <button class="proto-picker-item proto-picker-replay" aria-label="Replay animation (R)">↻</button>
+</nav>
+
+<script>
+'use strict';
+/* ═══════════════════════════════════════════════════════════════════════
+   Engine. Every variant is a pure function of time: render(t) for t∈[0,15].
+   That makes playback, scrubbing and frame-exact export the same code path.
+   ═══════════════════════════════════════════════════════════════════════ */
+const W = 1920, H = 1080, DUR = 15;
+const RECORD = new URLSearchParams(location.search).has('record');
+const REDUCE = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, p) => a + (b - a) * p;
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const smooth = (a, b, x) => { const p = clamp((x - a) / (b - a)); return p * p * (3 - 2 * p); };
+const TAU = Math.PI * 2;
+
+function bezier(x1, y1, x2, y2) {
+  const cx = 3 * x1, bx = 3 * (x2 - x1) - cx, ax = 1 - cx - bx;
+  const cy = 3 * y1, by = 3 * (y2 - y1) - cy, ay = 1 - cy - by;
+  const sx = s => ((ax * s + bx) * s + cx) * s, sy = s => ((ay * s + by) * s + cy) * s;
+  const dx = s => (3 * ax * s + 2 * bx) * s + cx;
+  return p => {
+    if (p <= 0) return 0; if (p >= 1) return 1;
+    let s = p;
+    for (let i = 0; i < 6; i++) { const e = sx(s) - p, d = dx(s); if (Math.abs(e) < 1e-5 || Math.abs(d) < 1e-6) break; s -= e / d; }
+    return sy(clamp(s));
+  };
+}
+const E = {
+  lin: p => p,
+  inQuad: p => p * p,
+  inOutQuad: p => p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2,
+  inCubic: p => p * p * p,
+  outCubic: p => 1 - Math.pow(1 - p, 3),
+  inOutCubic: p => p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2,
+  outQuart: p => 1 - Math.pow(1 - p, 4),
+  inOutQuint: p => p < 0.5 ? 16 * p ** 5 : 1 - Math.pow(-2 * p + 2, 5) / 2,
+  inExpo: p => p <= 0 ? 0 : Math.pow(2, 10 * p - 10),
+  outExpo: p => p >= 1 ? 1 : 1 - Math.pow(2, -10 * p),
+  inOutExpo: p => p <= 0 ? 0 : p >= 1 ? 1 : p < 0.5 ? Math.pow(2, 20 * p - 10) / 2 : (2 - Math.pow(2, -20 * p + 10)) / 2,
+  inOutSine: p => -(Math.cos(Math.PI * p) - 1) / 2,
+  outBack: (p, s = 1.70158) => 1 + (s + 1) * Math.pow(p - 1, 3) + s * Math.pow(p - 1, 2),
+  strong: bezier(0.23, 1, 0.32, 1),
+};
+function rng(seed) {
+  return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+}
+const hash = n => { const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); };
+
+function tf(el, o) {
+  const x = o.x || 0, y = o.y || 0, r = o.r || 0;
+  const sx = o.sx ?? o.s ?? 1, sy = o.sy ?? o.s ?? 1;
+  el.style.transform = `translate3d(${x.toFixed(2)}px,${y.toFixed(2)}px,0) rotate(${r.toFixed(3)}deg) scale(${sx.toFixed(4)},${sy.toFixed(4)})`;
+  if (o.o !== undefined) el.style.opacity = clamp(o.o).toFixed(3);
+}
+const show = (el, on) => { el.style.visibility = on ? 'visible' : 'hidden'; };
+function refs(root) { const r = {}; root.querySelectorAll('[data-k]').forEach(n => { r[n.dataset.k] = n; }); return r; }
+function html(parent, cls, markup) { const d = document.createElement('div'); d.className = cls; d.innerHTML = markup; parent.appendChild(d); return d; }
+const SVGNS = 'http://www.w3.org/2000/svg';
+function sv(tag, attrs, parent) { const n = document.createElementNS(SVGNS, tag); for (const k in attrs) n.setAttribute(k, attrs[k]); if (parent) parent.appendChild(n); return n; }
+
+/* Soft-edged right-to-left reveal (the direction Arabic is written). */
+function rtlReveal(el, p, w) {
+  const o = lerp(-0.3, -1.72, p) * w;
+  el.style.webkitMaskPosition = el.style.maskPosition = `${o.toFixed(1)}px 0`;
+}
+
+/* The flag of Iraq: red, white, black, with the takbir in green Kufic. */
+function makeFlag(w = 1200) {
+  const h = Math.round(w * 2 / 3);
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const g = c.getContext('2d');
+  g.fillStyle = '#ce1126'; g.fillRect(0, 0, w, h / 3 + 1);
+  g.fillStyle = '#ffffff'; g.fillRect(0, h / 3, w, h / 3 + 1);
+  g.fillStyle = '#000000'; g.fillRect(0, h * 2 / 3, w, h / 3);
+  g.fillStyle = '#007a3d'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.direction = 'rtl';
+  let fs = h * 0.2; g.font = `700 ${fs}px "Reem Kufi", "Noto Kufi Arabic", sans-serif`;
+  const mw = g.measureText('الله أكبر').width; fs *= (w * 0.5) / mw; fs = Math.min(fs, h * 0.3);
+  g.font = `700 ${fs}px "Reem Kufi", "Noto Kufi Arabic", sans-serif`;
+  g.fillText('الله أكبر', w / 2, h / 2 + fs * 0.04);
+  return c;
+}
+/* Cloth simulation-lite: the flag is drawn as thin columns displaced by two travelling waves,
+   pinned at the hoist, with per-column light and shade from the wave's slope. */
+function drawFlag(ctx, img, x, y, w, h, t, opt = {}) {
+  const step = opt.step || 3, amp = opt.amp ?? h * 0.032, off = opt.off;
+  const iw = img.width, ih = img.height;
+  for (let c = 0; c < w; c += step) {
+    const u = c / w, env = 0.1 + 0.9 * u;
+    const ph = u * TAU * 1.15 - t * 3.9, ph2 = u * TAU * 2.4 - t * 6.3 + 1.3;
+    const dy = amp * env * (Math.sin(ph) + 0.32 * Math.sin(ph2));
+    const slope = env * (Math.cos(ph) + 0.55 * Math.cos(ph2));
+    const yy = y + dy + (off ? off(u) : 0);
+    const sh = h * (1 - 0.012 * slope);
+    ctx.drawImage(img, u * iw, 0, Math.max(1, step / w * iw), ih, x + c, yy, step + 0.7, sh);
+    if (slope > 0) ctx.fillStyle = `rgba(255,250,240,${(slope * 0.085).toFixed(3)})`;
+    else ctx.fillStyle = `rgba(0,0,0,${(-slope * 0.26).toFixed(3)})`;
+    ctx.fillRect(x + c, yy, step, sh);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   1 · KINETIC — Swiss kinetic typography. Flat flag colour, hard cuts on a
+   120 BPM grid (every move lands on a beat or an eighth).
+   ═══════════════════════════════════════════════════════════════════════ */
+function Kinetic(stage) {
+  const root = html(stage, 'full kin', '');
+  const digits = Array.from({ length: 40 }, (_, k) => `<span>${k % 10}</span>`).join('');
+  const N = 16, SW = W / N;
+  const slices = Array.from({ length: N }, (_, i) =>
+    `<div class="k-slice" data-k="s${i}" style="left:${i * SW}px"><div class="k-word" style="left:${-i * SW}px"><span class="w ar">العراق</span></div><div class="k-word tri" data-k="t${i}" style="left:${-i * SW}px"><span class="w ar">العراق</span></div></div>`).join('');
+  root.innerHTML = `
+    <svg width="0" height="0" style="position:absolute"><defs>
+      ${[0, 1, 2, 3].map(i => `<filter id="kmb${i}" x="-10%" y="-60%" width="120%" height="220%"><feGaussianBlur data-k="blur${i}" stdDeviation="0 0"/></filter>`).join('')}
+    </defs></svg>
+    <div class="full k-paper" data-k="paper">
+      <div class="k-eyebrow l" data-k="ebL"><span>INDEPENDENCE</span><span>03 · 10</span></div>
+      <div class="k-eyebrow r" data-k="ebR"><span>LEAGUE OF NATIONS</span><span>GENEVA</span></div>
+      <div class="k-reels">${[0, 1, 2, 3].map(i => `<div class="k-reel" data-k="reel${i}" style="left:${i * 300}px"><div class="k-strip" data-k="strip${i}">${digits}</div></div>`).join('')}</div>
+      <div class="abs k-rule" data-k="rule"></div>
+      <div class="abs mask" style="left:360px;top:800px"><div class="k-capL" data-k="capL">94 YEARS</div></div>
+      <div class="abs mask" style="right:360px;top:796px"><div class="k-capR ar" data-k="capR">٩٤ عاماً على الاستقلال</div></div>
+    </div>
+    <div class="k-band" data-k="b0" style="top:0;background:var(--red)"><div class="k-marq lat" data-k="m0" style="color:var(--white)">IRAQ · IRAQ · IRAQ · IRAQ · IRAQ · IRAQ</div></div>
+    <div class="k-band" data-k="b1" style="top:360px;background:var(--white)"><div class="k-marq arb ar" data-k="m1" style="color:var(--black)">العراق · العراق · العراق · العراق · العراق · العراق</div></div>
+    <div class="k-band" data-k="b2" style="top:720px;background:var(--black)"><div class="k-marq lat out" data-k="m2">1932 · 1932 · 1932 · 1932 · 1932 · 1932</div></div>
+    <div class="abs k-line" data-k="line"></div>
+    <div class="full k-red" data-k="red">
+      <div class="k-lines">
+        <div class="mask"><div class="k-l" data-k="l0">THE FIRST</div></div>
+        <div class="mask"><div class="k-l o" data-k="l1">MANDATE</div></div>
+        <div class="mask"><div class="k-l" data-k="l2">TO BECOME</div></div>
+        <div class="mask"><div class="k-l big" data-k="l3">SOVEREIGN</div></div>
+      </div>
+      <div class="k-redcap">
+        <div class="mask"><div class="ar" data-k="rc0">أوّل دولة تحت الانتداب تنال استقلالها</div></div>
+        <div class="mask"><div class="mono" data-k="rc1">LEAGUE OF NATIONS · GENEVA · 3 OCT 1932</div></div>
+      </div>
+    </div>
+    <div class="full k-black" data-k="black">
+      <div class="k-hair" data-k="h0" style="top:359px"></div><div class="k-hair" data-k="h1" style="top:719px"></div>
+      ${slices}
+      <div class="abs k-sub" data-k="sub">REPUBLIC OF IRAQ  ·  <span class="ar" style="font-family:var(--font-kufi);font-weight:600">جمهورية العراق</span></div>
+    </div>
+    <canvas class="full" width="${W}" height="${H}" data-k="cv"></canvas>
+    <div class="k-lock">
+      <div class="mask"><div class="a" data-k="L0">IRAQ</div></div>
+      <div class="mask"><div class="b" data-k="L1">INDEPENDENCE DAY</div></div>
+      <div class="mask"><div class="c ar" data-k="L2">عيد استقلال العراق</div></div>
+      <div class="mask"><div class="d" data-k="L3">03.10.1932 — 03.10.2026  ·  <em>94</em></div></div>
+    </div>
+    <div class="k-ul" data-k="ul"></div>
+    <div data-k="marks" style="position:absolute;inset:0">
+      <div class="k-corner" style="left:56px;top:56px;border-left-width:2px;border-top-width:2px"></div>
+      <div class="k-corner" style="right:56px;top:56px;border-right-width:2px;border-top-width:2px"></div>
+      <div class="k-corner" style="left:56px;bottom:56px;border-left-width:2px;border-bottom-width:2px"></div>
+      <div class="k-corner" style="right:56px;bottom:56px;border-right-width:2px;border-bottom-width:2px"></div>
+      <div class="k-mark" style="left:100px;top:62px">IRQ — 1932/2026</div>
+      <div class="k-mark" style="right:100px;top:62px">3 OCTOBER</div>
+      <div class="k-mark" style="left:100px;bottom:62px">BAGHDAD 33.31°N 44.36°E</div>
+      <div class="k-mark" style="right:100px;bottom:62px">NATIONAL DAY</div>
+    </div>`;
+  const k = refs(root);
+  const ctx = k.cv.getContext('2d');
+  const flag = makeFlag(1260);
+
+  // Fit the giant word to the frame once fonts are in.
+  const probe = root.querySelector('.k-word span');
+  probe.style.fontSize = '400px';
+  const fs = Math.min(470, 400 * 1560 * (stage.getBoundingClientRect().width / W || 1) / probe.getBoundingClientRect().width);
+  root.querySelectorAll('.k-word span').forEach(s => { s.style.fontSize = fs + 'px'; });
+
+  const lock = root.querySelector('.k-lock');
+  k.ul.style.top = (lock.offsetTop + lock.offsetHeight + 28) + 'px';
+  const from = [1, 9, 3, 2], to = [12, 20, 22, 26];
+  const reelV = (i, t) => {
+    const a = 3.35 + i * 0.05, b = 4.3 + i * 0.19;
+    let v = lerp(from[i], to[i], E.inOutCubic(prog(t, a, b)));
+    if (t > b) v -= 0.16 * Math.sin((t - b) * 24) * Math.exp(-(t - b) * 11);
+    return v;
+  };
+  const rise = (el, t, a, d = 0.75) => { const p = E.outExpo(prog(t, a, a + d)); el.style.transform = `translate3d(0,${((1 - p) * 105).toFixed(2)}%,0)`; };
+
+  function render(t) {
+    // ── A · the line opens into the tricolour, type races through the bands
+    show(k.line, t < 0.42);
+    tf(k.line, { sx: E.outExpo(prog(t, 0, 0.5)) });
+    const bandsOn = t < 3.1;
+    for (let i = 0; i < 3; i++) {
+      const b = k['b' + i]; show(b, bandsOn && t > 0.33);
+      const p = E.outExpo(prog(t, 0.35 + i * 0.05, 1.05 + i * 0.05));
+      const ty = (540 - (180 + i * 360)) * (1 - p);
+      const ex = E.inOutExpo(prog(t, 2.45 + i * 0.06, 2.95 + i * 0.06));
+      tf(b, { x: (i % 2 ? 1 : -1) * W * ex, y: ty, sy: lerp(0.012, 1, p) });
+    }
+    tf(k.m0, { x: 120 - 900 * t });
+    tf(k.m1, { x: -3200 + 900 * t });
+    tf(k.m2, { x: -150 - 1150 * t });
+
+    // ── B · odometer 1932 → 2026
+    show(k.paper, t > 2.3 && t < 5.9);
+    if (t > 2.3 && t < 5.9) {
+      for (let i = 0; i < 4; i++) {
+        const v = reelV(i, t), vel = (reelV(i, t + 1 / 120) - reelV(i, t - 1 / 120)) * 60;
+        const enter = 1 - E.outExpo(prog(t, 2.75 + i * 0.07, 3.45 + i * 0.07));
+        tf(k['strip' + i], { y: -v * 440 });
+        tf(k['reel' + i], { y: enter * 460 });
+        const blur = Math.min(46, Math.abs(vel) * 440 * 0.011);
+        k['blur' + i].setAttribute('stdDeviation', `0 ${blur.toFixed(2)}`);
+        k['reel' + i].style.filter = blur > 0.4 ? `url(#kmb${i})` : 'none';
+      }
+      const eb = E.outExpo(prog(t, 2.95, 3.6));
+      tf(k.ebL, { y: (1 - eb) * 30, o: eb }); tf(k.ebR, { y: (1 - eb) * 30, o: eb });
+      tf(k.rule, { sx: E.inOutCubic(prog(t, 3.35, 4.9)) });
+      show(k.rule, t < 5.22);
+      rise(k.capL, t, 4.9); rise(k.capR, t, 5.0);
+    }
+
+    // ── C · statement on red, the rule becomes the field
+    show(k.red, t > 5.18 && t < 8.7);
+    if (t > 5.18 && t < 8.7) {
+      const p = E.inOutExpo(prog(t, 5.2, 5.72));
+      tf(k.red, { sx: lerp(1200 / W, 1, p), sy: lerp(10 / H, 1, p) });
+      ['l0', 'l1', 'l2', 'l3'].forEach((id, j) => {
+        const a = [5.72, 5.97, 6.22, 6.55][j];
+        const pin = E.outExpo(prog(t, a, a + 0.75));
+        const out = E.inOutExpo(prog(t, 7.95 + j * 0.05, 8.4 + j * 0.05));
+        const el = k[id];
+        el.style.transform = `translate3d(0,${((1 - pin) * 108 - out * 108).toFixed(2)}%,0) rotate(${((1 - pin) * 5).toFixed(2)}deg)`;
+      });
+      k.l3.style.fontStretch = lerp(62, 112, E.outExpo(prog(t, 6.6, 7.7))).toFixed(2) + '%';
+      ['rc0', 'rc1'].forEach((id, j) => {
+        const pin = E.outExpo(prog(t, 6.9 + j * 0.12, 7.6 + j * 0.12)), out = E.inOutExpo(prog(t, 8.0, 8.4));
+        k[id].style.transform = `translate3d(0,${((1 - pin) * 110 - out * 110).toFixed(2)}%,0)`;
+      });
+    }
+
+    // ── D · العراق assembles in alternating slices; the flag's colours sweep through it right-to-left
+    show(k.black, t > 8.0);
+    if (t > 8.0) {
+      tf(k.black, { y: H * (1 - E.inOutExpo(prog(t, 8.05, 8.55))) });
+      const X = lerp(1760, 160, E.inOutCubic(prog(t, 9.45, 10.15)));
+      for (let i = 0; i < N; i++) {
+        const dir = i % 2 ? 1 : -1, d = Math.abs(i - (N - 1) / 2) * 0.026;
+        const pin = E.outExpo(prog(t, 8.45 + d, 9.3 + d));
+        const out = E.inOutExpo(prog(t, 10.5 + d, 11.0 + d));
+        tf(k['s' + i], { y: dir * 1120 * (1 - pin) - dir * 1120 * out });
+        k['t' + i].style.clipPath = `inset(0 0 0 ${X.toFixed(1)}px)`;
+      }
+      for (let j = 0; j < 2; j++) tf(k['h' + j], { sx: E.outExpo(prog(t, 8.6 + j * 0.1, 9.5 + j * 0.1)), o: 1 - prog(t, 10.4, 10.8) });
+      const sp = E.outExpo(prog(t, 9.2, 10.2));
+      k.sub.style.letterSpacing = lerp(1.1, 0.5, sp).toFixed(3) + 'em';
+      tf(k.sub, { o: sp * (1 - prog(t, 10.4, 10.7)) });
+    }
+
+    // ── E · the flag arrives in the same slice language, waves, and steps aside for the lockup
+    ctx.clearRect(0, 0, W, H);
+    if (t > 10.5) {
+      const m = E.inOutQuint(prog(t, 12.0, 12.95));
+      const fw = lerp(1260, 780, m), fh = fw * 2 / 3;
+      const cx = lerp(960, 560, m), cy = lerp(540, 556, m);
+      const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, fw);
+      glow.addColorStop(0, `rgba(206,17,38,${0.16 * prog(t, 10.6, 11.6)})`); glow.addColorStop(1, 'rgba(206,17,38,0)');
+      ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
+      drawFlag(ctx, flag, cx - fw / 2, cy - fh / 2, fw, fh, t, {
+        step: 3,
+        off: u => {
+          const g = Math.min(23, Math.floor(u * 24)), dir = g % 2 ? 1 : -1, d = Math.abs(g - 11.5) * 0.02;
+          return dir * 1150 * (1 - E.outExpo(prog(t, 10.6 + d, 11.45 + d)));
+        },
+      });
+    }
+    const lockOn = t > 12.3;
+    root.querySelector('.k-lock').style.visibility = lockOn ? 'visible' : 'hidden';
+    if (lockOn) ['L0', 'L1', 'L2', 'L3'].forEach((id, j) => {
+      const a = 12.45 + j * 0.13, pin = E.outExpo(prog(t, a, a + 0.8));
+      k[id].style.transform = `translate3d(0,${((1 - pin) * 105).toFixed(2)}%,0)`;
+    });
+    tf(k.ul, { sx: E.outExpo(prog(t, 13.35, 14.2)) });
+    tf(k.marks, { o: E.outCubic(prog(t, 13.1, 13.6)) });
+  }
+  return { render };
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   2 · MESOPOTAMIA — gold line-work on lapis. One unbroken camera move:
+   cuneiform → the two rivers → Baghdad's round city → an eight-point star.
+   ═══════════════════════════════════════════════════════════════════════ */
+function Mesopotamia(stage) {
+  const root = html(stage, 'full meso', `
+    <canvas class="full m-dust" width="${W}" height="${H}" data-k="dust"></canvas>
+    <svg class="full" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" data-k="svg">
+      <defs>
+        <filter id="mglow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="7"/></filter>
+        <linearGradient id="mgold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fbe8b4"/><stop offset="0.55" stop-color="#e3b862"/><stop offset="1" stop-color="#b5853a"/></linearGradient>
+        <filter id="mgrain"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="3"/><feColorMatrix values="0 0 0 0 0.9  0 0 0 0 0.8  0 0 0 0 0.6  0 0 0 0.09 0"/></filter>
+      </defs>
+      <g data-k="world"></g>
+      <rect width="${W}" height="${H}" filter="url(#mgrain)" style="mix-blend-mode:overlay"/>
+    </svg>
+    <div class="full m-vig"></div>
+    <div class="m-cap" data-k="cap"><div class="ar" lang="ar">مدينة السلام</div><div class="mono">MADINAT AL-SALAM · BAGHDAD · 762 CE</div></div>
+    <div class="m-title"><span class="ar" lang="ar" data-k="title">عيد استقلال العراق</span></div>
+    <div class="m-en" data-k="en">Iraq Independence Day</div>
+    <div class="m-rule" data-k="rule"><i style="background:#ce1126"></i><i style="background:#f7f5f0"></i><i style="background:#000"></i></div>
+    <div class="m-date" data-k="date">3 · X · 1932 — 2026</div>`);
+  const k = refs(root);
+  const world = k.world;
+  const R = rng(1932);
+
+  // Clay-tablet rulings and cuneiform signs, generated.
+  const tablet = sv('g', {}, world);
+  const rules = [];
+  for (let l = 0; l <= 7; l++) rules.push(sv('line', { x1: 280, x2: 1640, y1: 262 + l * 74, y2: 262 + l * 74, class: 'm-line fine', opacity: 0 }, tablet));
+  const wedges = [];
+  for (let l = 0; l < 7; l++) {
+    let x = 300 + R() * 30;
+    const y = 299 + l * 74;
+    while (x < 1600) {
+      const w = 46 + R() * 70, n = 2 + Math.floor(R() * 4);
+      for (let j = 0; j < n; j++) {
+        const type = R();
+        const wx = x + R() * (w - 20), wy = y + (R() - 0.5) * 34;
+        let rot = 0, d;
+        if (type < 0.45) { rot = 0; d = 'M0 -7 L14 0 L0 7 Z M11 0 H38'; }
+        else if (type < 0.72) { rot = 90; d = 'M0 -7 L14 0 L0 7 Z M11 0 H30'; }
+        else if (type < 0.86) { rot = 45; d = 'M0 -6 L12 0 L0 6 Z M9 0 H26'; }
+        else { rot = 0; d = 'M16 -11 L0 0 L16 11 L9 0 Z'; }
+        const g = sv('g', {}, tablet);
+        sv('path', { d, class: 'm-gold', stroke: '#e3b862', 'stroke-width': 2.2, 'stroke-linejoin': 'round' }, g);
+        wedges.push({ g, x: wx, y: wy, rot, line: l, s: R() });
+      }
+      x += w + 22 + R() * 12;
+    }
+  }
+
+  // The rivers, geographically ordered: Tigris to the north-east, Euphrates to the south-west, meeting at Qurna.
+  const rivers = sv('g', {}, world);
+  const D = {
+    tig: 'M 760 -60 C 820 110, 760 250, 905 380 S 1085 520, 1150 600 S 1295 720, 1330 800',
+    euph: 'M 60 130 C 250 190, 330 330, 470 430 S 700 625, 900 685 S 1180 765, 1330 800',
+    shatt: 'M 1330 800 C 1400 880, 1455 965, 1580 1150',
+  };
+  const riv = {};
+  for (const key in D) {
+    const glow = sv('path', { d: D[key], class: 'm-river glow', filter: 'url(#mglow)' }, rivers);
+    const p = sv('path', { d: D[key], class: 'm-river' }, rivers);
+    const L = p.getTotalLength();
+    const pts = Array.from({ length: 301 }, (_, i) => { const q = p.getPointAtLength(L * i / 300); return [q.x, q.y]; });
+    [glow, p].forEach(n => { n.style.strokeDasharray = `${L} ${L}`; });
+    riv[key] = { glow, p, L, pts };
+  }
+  const at = (key, s) => { const pts = riv[key].pts, f = clamp(s) * 300, i = Math.min(299, Math.floor(f)), r = f - i; return [lerp(pts[i][0], pts[i + 1][0], r), lerp(pts[i][1], pts[i + 1][1], r)]; };
+  const B = { x: at('tig', 0.36)[0], y: at('tig', 0.36)[1] };
+  const flow = [];
+  for (const key of ['tig', 'euph', 'shatt']) {
+    const n = key === 'shatt' ? 18 : 46;
+    for (let i = 0; i < n; i++) flow.push({ key, ph: R(), sp: 0.035 + R() * 0.05, r: 1.4 + R() * 1.8, c: sv('circle', { r: 2, fill: '#fbe8b4' }, rivers) });
+  }
+  // wedge → river targets
+  wedges.forEach(w => { w.key = w.line < 4 ? 'tig' : 'euph'; w.ts = clamp((w.x - 300) / 1300 * 0.85 + w.s * 0.1); w.target = at(w.key, w.ts); });
+
+  // Labels
+  const labels = sv('g', {}, world);
+  function label(key, s, dx, dy, ar, en, anchor) {
+    const [px, py] = at(key, s);
+    const g = sv('g', { opacity: 0 }, labels);
+    sv('line', { x1: px, y1: py, x2: px + dx * 0.7, y2: py + dy * 0.7, class: 'm-line fine' }, g);
+    sv('circle', { cx: px, cy: py, r: 4, fill: '#f7dfa0' }, g);
+    const a = sv('text', { x: px + dx, y: py + dy, class: 'm-lbl-ar', 'font-size': 40, 'text-anchor': anchor }, g); a.textContent = ar;
+    const e = sv('text', { x: px + dx, y: py + dy + 28, class: 'm-lbl-en', 'font-size': 15, 'text-anchor': anchor }, g); e.textContent = en;
+    return g;
+  }
+  const lTig = label('tig', 0.16, 70, 6, 'دجلة', 'TIGRIS', 'start');
+  const lEuph = label('euph', 0.3, -60, 52, 'الفرات', 'EUPHRATES', 'end');
+  const lBag = sv('g', { opacity: 0 }, labels);
+  const pulse = [0, 1].map(() => sv('circle', { cx: B.x, cy: B.y, r: 10, class: 'm-line', opacity: 0 }, lBag));
+  sv('circle', { cx: B.x, cy: B.y, r: 5, fill: '#fbe8b4' }, lBag);
+  const bt = sv('text', { x: B.x + 26, y: B.y - 16, class: 'm-lbl-ar', 'font-size': 34, 'text-anchor': 'start' }, lBag); bt.textContent = 'بغداد';
+  const be = sv('text', { x: B.x + 26, y: B.y + 8, class: 'm-lbl-en', 'font-size': 13 }, lBag); be.textContent = 'BAGHDAD';
+
+  // The Round City of al-Mansur, 762 CE: double wall, four gates on the diagonals, roads to the centre.
+  const city = sv('g', { transform: `translate(${B.x} ${B.y})` }, world);
+  const ringDefs = [[130, 'm-line thick'], [119, 'm-line'], [72, 'm-line'], [34, 'm-line']];
+  const rings = ringDefs.map(([r, cls]) => { const c = sv('circle', { r, class: cls, transform: 'rotate(-90)' }, city); const L = TAU * r; c.style.strokeDasharray = `${L} ${L}`; c.style.strokeDashoffset = L; return { c, L }; });
+  const roads = [45, 135, 225, 315].map(a => {
+    const g = sv('g', { transform: `rotate(${a})` }, city);
+    const l = sv('line', { x1: 34, y1: 0, x2: 168, y2: 0, class: 'm-line' }, g);
+    sv('rect', { x: 113, y: -9, width: 22, height: 18, class: 'm-line', fill: '#0b1838' }, g);
+    l.style.strokeDasharray = '134 134'; l.style.strokeDashoffset = 134;
+    return g;
+  });
+  const palace = sv('rect', { x: -12, y: -12, width: 24, height: 24, fill: '#e3b862', transform: 'rotate(45)', opacity: 0 }, city);
+  const ticksG = sv('g', {}, city);
+  const ticks = Array.from({ length: 72 }, (_, i) => sv('line', { x1: 146, x2: i % 6 ? 154 : 164, y1: 0, y2: 0, class: 'm-line fine', transform: `rotate(${i * 5})`, opacity: 0 }, ticksG));
+  let fine = ''; for (let i = 0; i < 180; i++) { const a = i * TAU / 180; fine += `M${(176 * Math.cos(a)).toFixed(2)} ${(176 * Math.sin(a)).toFixed(2)} L${(181 * Math.cos(a)).toFixed(2)} ${(181 * Math.sin(a)).toFixed(2)} `; }
+  const fineRing = sv('path', { d: fine, class: 'm-line fine', opacity: 0 }, city);
+  const gates = [['خراسان', -45], ['البصرة', 45], ['الكوفة', 135], ['الشام', 225]].map(([n, a]) => {
+    const rad = a * Math.PI / 180, x = 205 * Math.cos(rad), y = 205 * Math.sin(rad);
+    const tx = sv('text', { x, y: y + 6, class: 'm-lbl-ar', 'font-size': 22, 'text-anchor': 'middle', opacity: 0 }, city); tx.textContent = n; return tx;
+  });
+  // Eight-point star: two squares, then their union filled in gold.
+  const Rs = 118, Ri = Rs * Math.cos(Math.PI / 4) / Math.cos(Math.PI / 8);
+  const starG = sv('g', {}, city);
+  const sq = [0, 45].map(rot => { const p = sv('rect', { x: -Rs / Math.SQRT2, y: -Rs / Math.SQRT2, width: Rs * Math.SQRT2, height: Rs * Math.SQRT2, class: 'm-line thick', transform: `rotate(${rot})` }, starG); const L = Rs * Math.SQRT2 * 4; p.style.strokeDasharray = `${L} ${L}`; p.style.strokeDashoffset = L; return { p, L }; });
+  let sd = ''; for (let i = 0; i < 16; i++) { const a = i * Math.PI / 8 - Math.PI / 2 + Math.PI / 8, r = i % 2 ? Rs : Ri; sd += (i ? 'L' : 'M') + (r * Math.cos(a)).toFixed(2) + ' ' + (r * Math.sin(a)).toFixed(2); }
+  const starFill = sv('path', { d: sd + 'Z', fill: 'url(#mgold)', opacity: 0 }, starG);
+  const starTx = sv('text', { x: 0, y: 18, 'font-size': 54, 'text-anchor': 'middle', fill: '#0b1838', style: 'font-family:var(--font-naskh);font-weight:700', opacity: 0 }, starG); starTx.textContent = '١٩٣٢';
+
+  // Gold dust
+  const dctx = k.dust.getContext('2d');
+  const dust = Array.from({ length: 170 }, () => ({ x: R() * W, y: R() * H, vy: 6 + R() * 22, sw: R() * TAU, s: 0.6 + R() * 1.9, f: 0.6 + R() * 2.4 }));
+
+  const titleW = k.title.getBoundingClientRect().width / (stage.getBoundingClientRect().width / W || 1);
+
+  const mix = (a, b, p) => ({ cx: lerp(a.cx, b.cx, p), cy: lerp(a.cy, b.cy, p), z: Math.exp(lerp(Math.log(a.z), Math.log(b.z), p)), r: lerp(a.r, b.r, p) });
+  const K0 = { cx: 960, cy: 540, z: 1, r: -2.5 }, K1 = { cx: 960, cy: 540, z: 1.07, r: 0 };
+  const K2 = { cx: B.x, cy: B.y, z: 2.6, r: 9 }, K3 = { cx: B.x, cy: B.y, z: 2.9, r: 15 };
+  const K4 = { cx: B.x, cy: B.y + 210 / 0.78, z: 0.78, r: 0 }, K5 = { ...K4, z: 0.8 };
+  function cam(t) {
+    if (t < 4.3) return mix(K0, K1, E.inOutSine(prog(t, 0, 4.3)));
+    if (t < 6.1) return mix(K1, K2, E.inOutCubic(prog(t, 4.3, 6.1)));
+    if (t < 9.5) return mix(K2, K3, E.inOutSine(prog(t, 6.1, 9.5)));
+    if (t < 11.2) return mix(K3, K4, E.inOutQuint(prog(t, 9.5, 11.2)));
+    return mix(K4, K5, prog(t, 11.2, 15));
+  }
+
+  function render(t) {
+    const c = cam(t);
+    world.setAttribute('transform', `translate(960 540) rotate(${c.r.toFixed(3)}) scale(${c.z.toFixed(4)}) translate(${-c.cx.toFixed(2)} ${-c.cy.toFixed(2)})`);
+    root.style.setProperty('--z', c.z.toFixed(4));
+
+    // Tablet
+    rules.forEach((r, i) => r.setAttribute('opacity', (0.28 * E.outCubic(prog(t, i * 0.05, 0.6 + i * 0.05)) * (1 - prog(t, 1.9, 2.7))).toFixed(3)));
+    show(tablet, t < 3.6);
+    for (const w of wedges) {
+      const d = 0.1 + (w.x - 300) / 1300 * 0.95 + w.line * 0.085;
+      const p = prog(t, d, d + 0.34);
+      const fd = 1.85 + (w.x - 300) / 1300 * 0.55 + w.line * 0.03;
+      const f = E.inOutCubic(prog(t, fd, fd + 0.95));
+      const x = lerp(w.x, w.target[0], f), y = lerp(w.y, w.target[1], f);
+      const s = lerp(1.7, 1, E.outCubic(p)) * lerp(1, 0.25, f);
+      w.g.setAttribute('transform', `translate(${x.toFixed(2)} ${y.toFixed(2)}) rotate(${(w.rot + (1 - E.outCubic(p)) * 12 + f * 30).toFixed(2)}) scale(${s.toFixed(3)})`);
+      w.g.setAttribute('opacity', (0.92 * E.outCubic(p) * (1 - smooth(0.55, 1, f))).toFixed(3));
+    }
+
+    // Rivers
+    const dp = { tig: E.inOutCubic(prog(t, 2.2, 4.0)), euph: E.inOutCubic(prog(t, 2.38, 4.15)), shatt: E.inOutCubic(prog(t, 3.95, 4.6)) };
+    for (const key in riv) { const r = riv[key]; [r.glow, r.p].forEach(n => { n.style.strokeDashoffset = (r.L * (1 - dp[key])).toFixed(2); }); }
+    rivers.setAttribute('opacity', (1 - 0.7 * smooth(5.4, 6.6, t)).toFixed(3));
+    for (const f of flow) {
+      const s = (f.ph + t * f.sp) % 1;
+      const vis = dp[f.key] > s + 0.01 && t > 2.6;
+      if (!vis) { f.c.setAttribute('opacity', 0); continue; }
+      const [x, y] = at(f.key, s);
+      f.c.setAttribute('cx', x.toFixed(2)); f.c.setAttribute('cy', y.toFixed(2));
+      f.c.setAttribute('r', (f.r / c.z).toFixed(2));
+      f.c.setAttribute('opacity', (0.85 * smooth(0, 0.06, s) * smooth(1, 0.94, s)).toFixed(3));
+    }
+    const lab = (g, a, b) => g.setAttribute('opacity', (E.outCubic(prog(t, a, a + 0.5)) * (1 - prog(t, b, b + 0.4))).toFixed(3));
+    lab(lTig, 3.45, 4.7); lab(lEuph, 3.65, 4.7); lab(lBag, 4.05, 5.6);
+    pulse.forEach((pc, i) => { const q = prog(t, 4.15 + i * 0.35, 5.15 + i * 0.35); pc.setAttribute('r', (10 + 40 * E.outCubic(q)).toFixed(2)); pc.setAttribute('opacity', (q > 0 && q < 1 ? 1 - q : 0).toFixed(3)); });
+
+    // Round city
+    const fadeCity = 1 - smooth(8.5, 9.3, t);
+    rings.forEach((r, i) => {
+      r.c.style.strokeDashoffset = (r.L * (1 - E.inOutCubic(prog(t, 4.75 + i * 0.22, 5.75 + i * 0.22)))).toFixed(2);
+      r.c.setAttribute('opacity', (i === 0 ? lerp(1, 0.55, smooth(8.5, 9.3, t)) : fadeCity).toFixed(3));
+    });
+    roads.forEach((g, i) => { g.firstChild.style.strokeDashoffset = (134 * (1 - E.outCubic(prog(t, 5.55 + i * 0.08, 6.35 + i * 0.08)))).toFixed(2); g.setAttribute('opacity', (prog(t, 5.5, 5.6) * fadeCity).toFixed(3)); });
+    palace.setAttribute('opacity', (E.outCubic(prog(t, 6.1, 6.5)) * fadeCity).toFixed(3));
+    ticksG.setAttribute('transform', `rotate(${(t * 7).toFixed(3)})`);
+    ticks.forEach((tk, i) => tk.setAttribute('opacity', (0.9 * E.outCubic(prog(t, 5.3 + i / 72 * 0.9, 5.6 + i / 72 * 0.9))).toFixed(3)));
+    fineRing.setAttribute('transform', `rotate(${(-t * 4).toFixed(3)})`);
+    fineRing.setAttribute('opacity', (0.7 * E.outCubic(prog(t, 5.9, 6.6))).toFixed(3));
+    gates.forEach((g, i) => g.setAttribute('opacity', (E.outCubic(prog(t, 6.3 + i * 0.12, 6.8 + i * 0.12)) * (1 - prog(t, 8.3, 8.8))).toFixed(3)));
+    const cp = E.outExpo(prog(t, 6.4, 7.2)) * (1 - prog(t, 8.4, 8.9));
+    tf(k.cap, { y: (1 - E.outExpo(prog(t, 6.4, 7.2))) * 24, o: cp });
+
+    // Star
+    sq.forEach((s, i) => { s.p.style.strokeDashoffset = (s.L * (1 - E.inOutCubic(prog(t, 8.0 + i * 0.18, 8.95 + i * 0.18)))).toFixed(2); });
+    const fillP = E.outCubic(prog(t, 9.05, 9.7));
+    starFill.setAttribute('opacity', fillP.toFixed(3));
+    sq.forEach(s => s.p.setAttribute('opacity', (1 - 0.6 * fillP).toFixed(3)));
+    starTx.setAttribute('opacity', E.outCubic(prog(t, 9.35, 9.9)).toFixed(3));
+    const starRot = 45 * E.inOutCubic(prog(t, 9.4, 11.0)) + Math.max(0, t - 11) * 2.5;
+    starTx.setAttribute('transform', `rotate(${(-starRot - c.r).toFixed(3)})`);
+    starG.setAttribute('transform', `rotate(${starRot.toFixed(3)}) scale(${(0.86 + 0.14 * E.outBack(prog(t, 9.05, 9.75), 2.2)).toFixed(4)})`);
+
+    // Lockup
+    rtlReveal(k.title, E.inOutCubic(prog(t, 10.75, 12.0)), titleW);
+    tf(k.title, { y: (1 - E.outExpo(prog(t, 10.75, 12.2))) * 26 });
+    const ep = E.outExpo(prog(t, 11.7, 13.0));
+    k.en.style.letterSpacing = lerp(0.62, 0.16, ep).toFixed(3) + 'em';
+    tf(k.en, { o: ep });
+    tf(k.rule, { sx: E.inOutCubic(prog(t, 12.2, 12.9)), o: prog(t, 12.2, 12.3) });
+    tf(k.date, { y: (1 - E.outExpo(prog(t, 12.6, 13.4))) * 14, o: E.outCubic(prog(t, 12.6, 13.2)) });
+
+    // Dust (always alive, so the hold never freezes)
+    dctx.clearRect(0, 0, W, H);
+    dctx.globalAlpha = smooth(0, 1.2, t);
+    for (const d of dust) {
+      const y = ((d.y - d.vy * t) % (H + 40) + H + 40) % (H + 40) - 20, x = d.x + Math.sin(t * 0.7 + d.sw) * 14;
+      const a = 0.25 + 0.75 * Math.abs(Math.sin(t * d.f + d.sw));
+      dctx.fillStyle = `rgba(247,223,160,${(a * 0.7).toFixed(3)})`;
+      dctx.beginPath(); dctx.arc(x, y, d.s, 0, TAU); dctx.fill();
+    }
+    dctx.globalAlpha = 1;
+  }
+  return { render };
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   3 · ARCHIVE — 1932 on film: leader, telegram, stamp. The stamp ignites,
+   the paper burns away and the present arrives in full colour.
+   ═══════════════════════════════════════════════════════════════════════ */
+function Archive(stage) {
+  const fields = [['FROM', 'GENEVA'], ['TO', 'BAGHDAD'], ['DATE', '3 OCTOBER 1932']];
+  const body = ['LEAGUE ASSEMBLY ADMITS IRAQ AS MEMBER STATE STOP', 'BRITISH MANDATE TERMINATED STOP', 'FIRST MANDATED TERRITORY TO WIN INDEPENDENCE STOP'];
+  const chars = s => [...s].map(ch => `<span class="c">${ch === ' ' ? '&nbsp;' : ch}</span>`).join('');
+  const root = html(stage, 'full arc', `
+    <svg width="0" height="0" style="position:absolute"><defs>
+      <filter id="a-ink" x="-5%" y="-5%" width="110%" height="110%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="4" result="warp"/>
+        <feDisplacementMap in="SourceGraphic" in2="warp" scale="6" xChannelSelector="R" yChannelSelector="G" result="d"/>
+        <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" seed="9" result="g"/>
+        <feColorMatrix in="g" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -4 3.1" result="holes"/>
+        <feComposite in="d" in2="holes" operator="in"/>
+      </filter>
+      <filter id="a-fiber"><feTurbulence type="fractalNoise" baseFrequency="0.012 0.6" numOctaves="3" seed="2"/><feColorMatrix values="0 0 0 0 0.45  0 0 0 0 0.33  0 0 0 0 0.18  0 0 0 0.55 0"/></filter>
+    </defs></svg>
+    <div class="full a-arch" data-k="arch">
+      <div class="a-tele" data-k="tele">
+        <svg class="fiber" width="1180" height="740"><rect width="1180" height="740" filter="url(#a-fiber)"/></svg>
+        <div class="a-head"><h3>TELEGRAM</h3><div class="r">SOCIÉTÉ DES NATIONS<br>LEAGUE OF NATIONS · Nº 1932-X-03</div></div>
+        <div class="a-fields">${fields.map(([a, b]) => `<div class="k">${a}</div><div class="v">${chars(b)}</div>`).join('')}</div>
+        <div class="a-body">${body.map(l => `<div>${chars(l)}</div>`).join('')}</div>
+        <div class="a-note ar" lang="ar" data-k="note">العراق دولة مستقلة</div>
+        <div class="a-stamp" data-k="stamp"><div class="en">INDEPENDENT</div><div class="ar" lang="ar">مستقل</div><div class="d">3 · X · 1932</div></div>
+      </div>
+      <div class="full a-leader" data-k="leader">
+        <div class="abs a-sweep" data-k="sweep"></div>
+        <div class="a-ring" style="left:580px;top:160px;width:760px;height:760px"></div>
+        <div class="a-ring" style="left:630px;top:210px;width:660px;height:660px"></div>
+        <div class="a-cross" style="left:0;top:538px;width:1920px;height:4px"></div>
+        <div class="a-cross" style="left:958px;top:0;width:4px;height:1080px"></div>
+        <div class="abs a-num" data-k="num">4</div>
+      </div>
+    </div>
+    <canvas class="full" width="${W}" height="${H}" data-k="cv"></canvas>
+    <div class="a-type" data-k="type">
+      <div class="a-years"><div data-k="y0">1932</div><div data-k="y1">2026</div></div>
+      <div class="a-rule" data-k="rule"></div>
+      <div class="a-ar ar" lang="ar" data-k="ar">عيد الاستقلال</div>
+      <div class="a-en" data-k="en">IRAQ · INDEPENDENCE DAY</div>
+      <div class="a-tw" data-k="tw"><em>■</em> 3 OCTOBER 1932 — NINETY-FOUR YEARS</div>
+    </div>
+    <div class="abs a-bar" data-k="barT" style="top:0"></div>
+    <div class="abs a-bar" data-k="barB" style="bottom:0"></div>
+    <canvas class="full" width="${W}" height="${H}" data-k="dirt"></canvas>
+    <canvas class="full a-grain" width="960" height="540" data-k="grain" style="width:${W}px;height:${H}px"></canvas>
+    <div class="full a-flick" data-k="flick"></div>
+    <div class="full a-vig"></div>
+    <div class="full a-flash" data-k="flash"></div>`);
+  const k = refs(root);
+  const scale = stage.getBoundingClientRect().width / W || 1;
+  const noteW = k.note.getBoundingClientRect().width / scale;
+  const arW = k.ar.getBoundingClientRect().width / scale;
+
+  // Typewriter schedule: 110 characters a second, a beat at each carriage return.
+  const cells = [...k.tele.querySelectorAll('.a-fields .v, .a-body > div')];
+  const typed = []; let tc = 1.5; const R = rng(3101932);
+  cells.forEach((cell, li) => {
+    if (li === 3) tc += 0.08;
+    cell.querySelectorAll('.c').forEach(c => { typed.push({ c, t: tc, ink: 0.72 + R() * 0.28, j: (R() - 0.5) * 2.6 }); tc += 1 / 110; });
+    tc += 0.07;
+  });
+
+  // Burn field: fractal value noise, sampled at quarter resolution.
+  const BW = 480, BH = 270;
+  function valueNoise(cell, seed) {
+    const r = rng(seed), gw = Math.ceil(BW / cell) + 2, gh = Math.ceil(BH / cell) + 2, g = new Float32Array(gw * gh).map(() => r());
+    const out = new Float32Array(BW * BH);
+    for (let y = 0; y < BH; y++) for (let x = 0; x < BW; x++) {
+      const fx = x / cell, fy = y / cell, ix = Math.floor(fx), iy = Math.floor(fy), ux = fx - ix, uy = fy - iy;
+      const sx = ux * ux * (3 - 2 * ux), sy = uy * uy * (3 - 2 * uy);
+      const a = g[iy * gw + ix], b = g[iy * gw + ix + 1], c = g[(iy + 1) * gw + ix], d = g[(iy + 1) * gw + ix + 1];
+      out[y * BW + x] = lerp(lerp(a, b, sx), lerp(c, d, sx), sy);
+    }
+    return out;
+  }
+  const n1 = valueNoise(48, 11), n2 = valueNoise(18, 12), n3 = valueNoise(6, 13);
+  const O = { x: 1272, y: 731 };
+  const field = new Float32Array(BW * BH);
+  for (let y = 0; y < BH; y++) for (let x = 0; x < BW; x++) {
+    const i = y * BW + x, n = n1[i] * 0.6 + n2[i] * 0.28 + n3[i] * 0.12;
+    field[i] = Math.hypot(x * 4 - O.x, (y * 4 - O.y) * 1.1) / 1700 + (n - 0.5) * 0.46;
+  }
+  const mk = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
+  const maskC = mk(BW, BH), fxC = mk(BW, BH), glowC = mk(BW, BH), liveC = mk(W, H);
+  const mctx = maskC.getContext('2d'), fctx = fxC.getContext('2d'), gctx = glowC.getContext('2d'), lctx = liveC.getContext('2d');
+  const mImg = mctx.createImageData(BW, BH), fImg = fctx.createImageData(BW, BH), gImg = gctx.createImageData(BW, BH);
+  const ctx = k.cv.getContext('2d');
+  const flag = makeFlag(1500);
+  const burnP = t => lerp(-0.24, 1.3, E.inOutQuad(prog(t, 4.3, 6.25)));
+
+  // Embers
+  const embers = Array.from({ length: 300 }, () => {
+    const ts = 4.4 + R() * 2.0, th = R() * TAU;
+    const r = Math.max(0, burnP(ts) + (R() - 0.5) * 0.2) * 1700;
+    return { ts, x: O.x + Math.cos(th) * r, y: O.y + Math.sin(th) * r / 1.1, vx: (R() - 0.5) * 70, vy: 70 + R() * 190, life: 0.7 + R() * 1.2, s: 1.1 + R() * 2.6, ph: R() * TAU };
+  });
+  const drift = Array.from({ length: 70 }, () => ({ x: R() * W, y: R() * H, vy: 30 + R() * 60, s: 0.8 + R() * 1.8, ph: R() * TAU, f: 1 + R() * 2 }));
+
+  // Film grain plates, cycled at 24 fps.
+  const gctx2 = k.grain.getContext('2d');
+  const plates = Array.from({ length: 6 }, (_, p) => { const im = gctx2.createImageData(960, 540), r = rng(77 + p); for (let i = 0; i < im.data.length; i += 4) { const v = 128 + (r() + r() + r() - 1.5) * 120; im.data[i] = im.data[i + 1] = im.data[i + 2] = v; im.data[i + 3] = 255; } return im; });
+  const dctx = k.dirt.getContext('2d');
+
+  function live(t) {
+    const g = lctx;
+    const bg = g.createRadialGradient(1300, 540, 0, 1300, 540, 1300);
+    bg.addColorStop(0, '#2b1d14'); bg.addColorStop(1, '#090706');
+    g.fillStyle = bg; g.fillRect(0, 0, W, H);
+    const push = 1 + 0.05 * E.inOutSine(prog(t, 4.3, 7.2));
+    const m = E.inOutQuint(prog(t, 7.0, 8.6));
+    const fw = lerp(2120 * push, 900, m), fh = fw * 2 / 3;
+    const cx = lerp(960, 1390, m), cy = 540;
+    drawFlag(g, flag, cx - fw / 2, cy - fh / 2, fw, fh, t, { step: 3, amp: fh * 0.03 });
+    // a slow light sweep across the cloth
+    const q = prog(t, 5.6, 7.8);
+    if (q > 0 && q < 1) {
+      const sx = lerp(-700, 2600, E.inOutSine(q));
+      const lg = g.createLinearGradient(sx - 420, 0, sx + 420, 200);
+      lg.addColorStop(0, 'rgba(255,240,215,0)'); lg.addColorStop(0.5, 'rgba(255,240,215,0.5)'); lg.addColorStop(1, 'rgba(255,240,215,0)');
+      g.globalCompositeOperation = 'soft-light'; g.fillStyle = lg; g.fillRect(0, 0, W, H); g.globalCompositeOperation = 'source-over';
+    }
+  }
+
+  function render(t) {
+    const step = Math.floor(t * 24);
+    const archOn = t < 6.4;
+    show(k.arch, archOn);
+
+    // Leader: 4, then 3 — the count stops on the date.
+    show(k.leader, t < 1.5);
+    if (t < 1.5) {
+      const four = t < 0.36, a = four ? prog(t, 0, 0.36) : E.outCubic(prog(t, 0.36, 1.12));
+      k.num.textContent = four ? '4' : '3';
+      k.sweep.style.background = `conic-gradient(from 0deg at 960px 540px, rgba(60,45,25,.38) 0deg ${(a * 360).toFixed(2)}deg, transparent ${(a * 360).toFixed(2)}deg)`;
+      const z = E.inExpo(prog(t, 1.14, 1.48));
+      tf(k.leader, { s: 1 + z * 2.4, o: 1 - z });
+      tf(k.num, { s: 1 + z * 6 });
+    }
+    k.flash.style.opacity = t > 1.08 && t < 1.13 ? 0.85 : 0;
+
+    if (archOn) {
+      const s = 1 + 0.16 * E.inOutSine(prog(t, 1.2, 4.6));
+      let sx = (hash(step) - 0.5) * 3, sy = (hash(step + 0.5) - 0.5) * 3;
+      if (t > 3.97) { const a = t - 3.97, e = Math.exp(-a * 9); sx += 16 * e * Math.sin(a * 71); sy += 12 * e * Math.cos(a * 53); }
+      tf(k.arch, { x: sx, y: sy, s });
+      k.tele.style.filter = `blur(${(7 * (1 - E.outCubic(prog(t, 1.15, 1.9)))).toFixed(2)}px)`;
+      for (const c of typed) {
+        const age = t - c.t;
+        if (age < 0) { c.c.style.opacity = 0; continue; }
+        c.c.style.opacity = (c.ink * Math.min(1, 0.45 + age * 22)).toFixed(3);
+        c.c.style.transform = `translateY(${c.j.toFixed(2)}px)`;
+      }
+      rtlReveal(k.note, E.inOutSine(prog(t, 3.3, 3.95)), noteW);
+      const sp = prog(t, 3.85, 3.97);
+      if (t >= 3.85) {
+        const settle = t > 3.97 ? 1 + 0.012 * E.outCubic(prog(t, 3.97, 4.3)) : lerp(2.7, 1, sp * sp);
+        k.stamp.style.opacity = Math.min(1, sp / 0.25).toFixed(3);
+        k.stamp.style.transform = `rotate(-9deg) scale(${settle.toFixed(4)})`;
+      } else k.stamp.style.opacity = 0;
+    }
+
+    // Burn-through to the present
+    ctx.clearRect(0, 0, W, H);
+    if (t > 4.3) {
+      live(t);
+      const p = burnP(t);
+      if (p < 1.25) {
+        const md = mImg.data, fd = fImg.data, gd = gImg.data;
+        for (let i = 0, j = 0; i < field.length; i++, j += 4) {
+          const d = field[i] - p;
+          md[j] = md[j + 1] = md[j + 2] = 255; md[j + 3] = d < -0.016 ? 255 : d < 0 ? (-d / 0.016) * 255 : 0;
+          let r = 0, gg = 0, b = 0, a = 0, ga = 0;
+          if (d > -0.032 && d < 0.004) {
+            const k2 = 1 - Math.abs(d + 0.013) / 0.019, hot = clamp(k2);
+            r = 255; gg = lerp(70, 225, hot * hot); b = lerp(10, 150, hot * hot * hot); a = clamp(k2 * 1.3) * 255; ga = a;
+          } else if (d >= 0.004 && d < 0.05) {
+            const c = Math.pow(1 - (d - 0.004) / 0.046, 1.6); r = 38; gg = 22; b = 10; a = c * 235;
+          }
+          fd[j] = r; fd[j + 1] = gg; fd[j + 2] = b; fd[j + 3] = a;
+          gd[j] = 255; gd[j + 1] = gg || 120; gd[j + 2] = b; gd[j + 3] = ga;
+        }
+        mctx.putImageData(mImg, 0, 0); fctx.putImageData(fImg, 0, 0); gctx.putImageData(gImg, 0, 0);
+        lctx.globalCompositeOperation = 'destination-in';
+        lctx.imageSmoothingEnabled = true; lctx.drawImage(maskC, 0, 0, W, H);
+        lctx.globalCompositeOperation = 'source-over';
+        ctx.drawImage(liveC, 0, 0);
+        ctx.imageSmoothingEnabled = true;
+        ctx.drawImage(fxC, 0, 0, W, H);
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.filter = 'blur(14px)'; ctx.drawImage(glowC, 0, 0, W, H); ctx.filter = 'none';
+        ctx.globalCompositeOperation = 'source-over';
+      } else ctx.drawImage(liveC, 0, 0);
+
+      // embers off the burn front, then a slow drift of sparks through the rest
+      ctx.globalCompositeOperation = 'lighter';
+      for (const e of embers) {
+        const a = t - e.ts; if (a < 0 || a > e.life) continue;
+        const q = a / e.life, x = e.x + e.vx * a + Math.sin(a * 4 + e.ph) * 12, y = e.y - e.vy * a - 40 * a * a;
+        ctx.fillStyle = `rgba(255,${Math.round(lerp(210, 80, q))},${Math.round(lerp(120, 20, q))},${(Math.pow(1 - q, 1.3)).toFixed(3)})`;
+        ctx.beginPath(); ctx.arc(x, y, e.s * (1 - q * 0.5), 0, TAU); ctx.fill();
+      }
+      const dA = smooth(6.0, 7.2, t);
+      if (dA > 0) for (const d of drift) {
+        const y = ((d.y - d.vy * t) % (H + 40) + H + 40) % (H + 40) - 20, x = d.x + Math.sin(t * 0.8 + d.ph) * 20;
+        ctx.fillStyle = `rgba(255,150,70,${(dA * 0.5 * (0.4 + 0.6 * Math.abs(Math.sin(t * d.f + d.ph)))).toFixed(3)})`;
+        ctx.beginPath(); ctx.arc(x, y, d.s, 0, TAU); ctx.fill();
+      }
+      // light leak across the hold
+      const lq = prog(t, 12.2, 14.8);
+      if (lq > 0 && lq < 1) {
+        const I = Math.sin(Math.PI * lq), lx = lerp(-200, 2100, E.inOutSine(lq));
+        const l1 = ctx.createRadialGradient(lx, 300, 0, lx, 300, 900);
+        l1.addColorStop(0, `rgba(255,140,60,${(0.42 * I).toFixed(3)})`); l1.addColorStop(1, 'rgba(255,140,60,0)');
+        ctx.globalCompositeOperation = 'screen'; ctx.fillStyle = l1; ctx.fillRect(0, 0, W, H);
+        const l2 = ctx.createRadialGradient(lx - 500, 900, 0, lx - 500, 900, 700);
+        l2.addColorStop(0, `rgba(255,60,90,${(0.2 * I).toFixed(3)})`); l2.addColorStop(1, 'rgba(255,60,90,0)');
+        ctx.fillStyle = l2; ctx.fillRect(0, 0, W, H);
+      }
+      ctx.globalCompositeOperation = 'source-over';
+    }
+
+    // Letterbox, type
+    const bp = E.outCubic(prog(t, 6.4, 7.4));
+    tf(k.barT, { y: -100 * (1 - bp) }); tf(k.barB, { y: 100 * (1 - bp) });
+    show(k.type, t > 7.7);
+    if (t > 7.7) {
+      const f0 = E.outCubic(prog(t, 7.8, 8.6)), f1 = E.inOutSine(prog(t, 9.3, 10.0));
+      k.y0.style.filter = `blur(${(26 * (1 - f0) + 26 * f1).toFixed(2)}px)`; k.y0.style.opacity = (f0 * (1 - f1)).toFixed(3);
+      k.y0.style.transform = `scale(${(1.06 - 0.06 * f0 - 0.04 * f1).toFixed(4)})`;
+      k.y1.style.filter = `blur(${(26 * (1 - f1)).toFixed(2)}px)`; k.y1.style.opacity = f1.toFixed(3);
+      k.y1.style.transform = `scale(${(1.06 - 0.06 * f1).toFixed(4)})`;
+      tf(k.rule, { sx: E.outExpo(prog(t, 9.9, 10.9)) });
+      const ap = E.inOutCubic(prog(t, 10.2, 11.2));
+      rtlReveal(k.ar, ap, arW);
+      tf(k.ar, { y: (1 - E.outExpo(prog(t, 10.2, 11.4))) * 20 });
+      k.ar.style.filter = `blur(${(8 * (1 - E.outCubic(prog(t, 10.2, 11.2)))).toFixed(2)}px)`;
+      const ep = E.outExpo(prog(t, 10.9, 11.9));
+      tf(k.en, { y: (1 - ep) * 18, o: ep });
+      const tw = E.outExpo(prog(t, 11.3, 12.2));
+      tf(k.tw, { y: (1 - tw) * 18, o: tw });
+    }
+
+    // Film surface: grain, dirt, flicker
+    gctx2.putImageData(plates[step % 6], 0, 0);
+    k.grain.style.opacity = lerp(0.5, 0.2, smooth(4.6, 6.6, t)).toFixed(3);
+    k.flick.style.opacity = archOn && t < 5 ? (0.04 + 0.08 * hash(step * 1.7)).toFixed(3) : 0;
+    dctx.clearRect(0, 0, W, H);
+    if (t < 5.2) {
+      const rr = rng(step * 31 + 7), fade = 1 - smooth(4.4, 5.2, t);
+      const ns = Math.floor(rr() * 3);
+      for (let i = 0; i < ns; i++) { const x = rr() * W; dctx.fillStyle = `rgba(255,245,220,${(0.18 * fade).toFixed(3)})`; dctx.fillRect(x, 0, 1 + rr() * 1.5, H); }
+      const nd = 3 + Math.floor(rr() * 5);
+      for (let i = 0; i < nd; i++) { dctx.fillStyle = `rgba(20,14,8,${(0.55 * fade).toFixed(3)})`; dctx.beginPath(); dctx.ellipse(rr() * W, rr() * H, 1 + rr() * 5, 1 + rr() * 3, rr() * 3, 0, TAU); dctx.fill(); }
+    }
+  }
+  return { render };
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Harness: picker (verbatim wiring from PICKER.md), player, scrubber, export hook.
+   ═══════════════════════════════════════════════════════════════════════ */
+const META = [
+  ['Kinetic', 'Swiss kinetic type, cut on a 120 BPM grid'],
+  ['Mesopotamia', 'Gold line-work on lapis, one continuous camera move'],
+  ['Archive', 'Archival film to live colour, texture and light'],
+];
+const variants = [Kinetic, Mesopotamia, Archive];
+
+const stage = document.getElementById('stage');
+const frame = document.getElementById('frame');
+const picker = document.querySelector('.proto-picker');
+const highlight = picker.querySelector('.proto-picker-highlight');
+const items = [...picker.querySelectorAll('.proto-picker-item:not(.proto-picker-replay)')];
+const replay = picker.querySelector('.proto-picker-replay');
+const playBtn = document.getElementById('play'), scrub = document.getElementById('scrub'), fill = document.getElementById('fill'), tcEl = document.getElementById('tc');
+let current = 0, ctrl = null, start = 0, pausedAt = null, mountToken = 0;
+
+document.getElementById('ticks').innerHTML = Array.from({ length: 16 }, (_, i) => `<i style="left:${(i / 15 * 100).toFixed(3)}%"></i>`).join('');
+
+function layout() {
+  if (RECORD) { frame.style.width = W + 'px'; frame.style.height = H + 'px'; stage.style.transform = 'none'; return; }
+  const vw = innerWidth - 32, vh = innerHeight - 16 - 84 - 14 - 44;
+  const s = Math.max(0.1, Math.min(vw / W, vh / H));
+  frame.style.width = (W * s) + 'px'; frame.style.height = (H * s) + 'px';
+  stage.style.transform = `scale(${s})`;
+  document.getElementById('transport').style.width = (W * s) + 'px';
+}
+
+function moveHighlight() {
+  const el = items[current];
+  highlight.style.width = el.offsetWidth + 'px';
+  highlight.style.transform = `translateX(${el.offsetLeft}px)`;
+}
+
+function mount(i) {
+  stage.innerHTML = '';
+  ctrl = null;
+  const token = ++mountToken;
+  // Clear first, render next frame, so entrance animations re-run.
+  requestAnimationFrame(() => {
+    if (token !== mountToken) return;
+    ctrl = variants[i](stage);
+    start = performance.now();
+    pausedAt = REDUCE ? DUR : null;
+    ctrl.render(REDUCE ? DUR : 0);
+    syncPlay();
+  });
+}
+
+function setActive(i) {
+  if (i < 0 || i >= variants.length) return;
+  current = i;
+  items.forEach((el, j) => {
+    el.toggleAttribute('data-active', j === i);
+    if (j === i) el.setAttribute('aria-current', 'true');
+    else el.removeAttribute('aria-current');
+  });
+  moveHighlight();
+  const url = new URL(location);
+  url.searchParams.set('v', i + 1);
+  try { history.replaceState(null, '', url); } catch { /* sandboxed viewers may refuse; selection still works */ }
+  document.getElementById('vname').textContent = META[i][0];
+  document.getElementById('vaxis').textContent = META[i][1];
+  mount(i);
+}
+
+const now = () => pausedAt != null ? pausedAt : (performance.now() - start) / 1000;
+function syncPlay() { playBtn.textContent = pausedAt != null ? '▶' : '❚❚'; playBtn.setAttribute('aria-label', pausedAt != null ? 'Play (Space)' : 'Pause (Space)'); }
+function togglePlay() {
+  if (!ctrl) return;
+  if (pausedAt != null) { const from = pausedAt >= DUR ? 0 : pausedAt; start = performance.now() - from * 1000; pausedAt = null; }
+  else pausedAt = Math.min(DUR, now());
+  syncPlay();
+}
+function seekTo(t) { if (!ctrl) return; t = clamp(t, 0, DUR); if (pausedAt != null) pausedAt = t; else start = performance.now() - t * 1000; }
+const fmt = t => { const s = Math.floor(t), f = Math.floor((t - s) * 60); return `00:${String(s).padStart(2, '0')}:${String(f).padStart(2, '0')}`; };
+
+function tick() {
+  if (ctrl && !RECORD) {
+    let t = now();
+    if (pausedAt == null && t > DUR + 1.2) { start = performance.now(); t = 0; } // loop after a short hold
+    const tt = Math.min(t, DUR);
+    ctrl.render(pausedAt == null && t > DUR ? t : tt);
+    fill.style.transform = `scaleX(${(tt / DUR).toFixed(4)})`;
+    tcEl.textContent = `${fmt(tt)} / 00:15:00`;
+    scrub.setAttribute('aria-valuenow', tt.toFixed(1));
+  }
+  requestAnimationFrame(tick);
+}
+
+items.forEach((el, i) => el.addEventListener('click', () => setActive(i)));
+replay?.addEventListener('click', () => mount(current));
+window.addEventListener('resize', () => { layout(); moveHighlight(); });
+frame.addEventListener('click', togglePlay);
+playBtn.addEventListener('click', togglePlay);
+let scrubbing = false;
+const scrubAt = e => { const r = scrub.getBoundingClientRect(); seekTo((e.clientX - r.left) / r.width * DUR); };
+scrub.addEventListener('pointerdown', e => { scrubbing = true; scrub.setPointerCapture(e.pointerId); scrubAt(e); });
+scrub.addEventListener('pointermove', e => { if (scrubbing) scrubAt(e); });
+scrub.addEventListener('pointerup', () => { scrubbing = false; });
+
+document.addEventListener('keydown', (e) => {
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable) return;
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  const num = parseInt(e.key, 10);
+  if (num >= 1 && num <= variants.length) setActive(num - 1);
+  else if (e.key === 'ArrowRight') setActive((current + 1) % variants.length);
+  else if (e.key === 'ArrowLeft') setActive((current - 1 + variants.length) % variants.length);
+  else if (e.key === 'r' || e.key === 'R') mount(current);
+  else if (e.key === ' ') { e.preventDefault(); togglePlay(); }
+  else if (e.key === ',' || e.key === '.') { if (pausedAt == null) togglePlay(); seekTo(now() + (e.key === '.' ? 1 : -1) / 60); }
+});
+
+const FONTS = [
+  ['900 100px Archivo', '1932 IRAQ'], ['800 100px Archivo', 'A'], ['600 100px Archivo', 'A'],
+  ['900 100px "Noto Kufi Arabic"', 'العراق'], ['800 100px "Noto Kufi Arabic"', 'عيد'], ['700 100px "Noto Kufi Arabic"', 'عيد'], ['600 100px "Noto Kufi Arabic"', 'عيد'],
+  ['700 100px "Reem Kufi"', 'الله أكبر'], ['700 100px "Aref Ruqaa"', 'عيد'], ['700 100px Amiri', 'عيد ١٩٣٢'], ['400 100px Amiri', 'دجلة'],
+  ['400 100px "Special Elite"', 'A'], ['italic 500 100px "Bodoni Moda"', '1932'], ['400 100px "Instrument Serif"', 'Iraq'],
+  ['400 100px "JetBrains Mono"', 'A'], ['700 100px "JetBrains Mono"', 'A'],
+];
+const fontsReady = Promise.race([
+  Promise.all(FONTS.map(([f, s]) => document.fonts.load(f, s).catch(() => null))).then(() => document.fonts.ready),
+  new Promise(r => setTimeout(r, 4000)),
+]);
+
+if (RECORD) document.body.classList.add('record');
+layout();
+window.__film = {
+  ready: fontsReady.then(() => new Promise(r => requestAnimationFrame(r))),
+  mount(i) { stage.innerHTML = ''; ctrl = variants[i](stage); },
+  seek(t) { ctrl && ctrl.render(t); },
+};
+fontsReady.then(() => {
+  if (RECORD) return;
+  setActive((parseInt(new URLSearchParams(location.search).get('v'), 10) || 1) - 1);
+  // Enable the slide only after first paint, so load doesn't animate.
+  requestAnimationFrame(() => requestAnimationFrame(() => picker.setAttribute('data-ready', '')));
+  requestAnimationFrame(tick);
+});
+</script>
+</body>
+</html>
